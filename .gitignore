@@ -1,0 +1,51 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+venv/
+env/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Pytest
+.pytest_cache/
+.tox/
+htmlcov/
+.coverage
+coverage.xml
+
+# Test results
+test-results/
+screenshots/
+logs/
+videos/
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Credentials (keep template only)
+data/credentials.json
+
+# Temporary files
+*.tmp
+*.log
+nul
+
+# Debug screenshots and test artifacts
+*.png
+pom/html
+
+# Playwright
+playwright/.local-browsers/

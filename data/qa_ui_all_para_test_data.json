@@ -1,0 +1,27 @@
+{
+  "process": {
+    "code": "CHK-DEC25-4",
+    "name": "qa-ui-all para"
+  },
+  "facility": {
+    "name": "Sydney"
+  },
+  "useCase": {
+    "name": "Cleaning"
+  },
+  "parameters": {
+    "Number": "123",
+    "SingleLineText": "Automation SLT test",
+    "Date": "today",
+    "Resource": "first_available",
+    "SingleSelect": "clean",
+    "YesNo": "Yes",
+    "Image": "test-resources/images/sample-test-image.jpg"
+  },
+  "expectedValues": {
+    "Number": "123",
+    "SingleLineText": "Automation SLT test",
+    "SingleSelect": "clean",
+    "YesNo": "Yes"
+  }
+}

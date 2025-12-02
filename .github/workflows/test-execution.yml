@@ -1,0 +1,130 @@
+name: DWI UI Automation Tests
+
+on:
+  push:
+    branches: [ main, develop, temp-* ]
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+        browser: ['chromium', 'firefox']
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python ${{ matrix.python-version }}
+      uses: actions/setup-python@v4
+      with:
+        python-version: ${{ matrix.python-version }}
+
+    - name: Cache dependencies
+      uses: actions/cache@v3
+      with:
+        path: ~/.cache/pip
+        key: ${{ runner.os }}-pip-${{ hashFiles('requirements.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-pip-
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Playwright browsers
+      run: |
+        python -m playwright install ${{ matrix.browser }}
+        python -m playwright install-deps ${{ matrix.browser }}
+
+    - name: Run tests
+      run: |
+        pytest tests/ --browser=${{ matrix.browser }} --headless -v
+      continue-on-error: false
+
+    - name: Generate Allure report
+      if: always()
+      run: |
+        pip install allure-pytest
+        allure generate test-results/allure-results -o test-results/allure-report --clean || echo "Allure report generation skipped"
+
+    - name: Upload test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: test-results-${{ matrix.python-version }}-${{ matrix.browser }}
+        path: |
+          test-results/
+          !test-results/videos/
+        retention-days: 30
+
+    - name: Upload screenshots on failure
+      if: failure()
+      uses: actions/upload-artifact@v3
+      with:
+        name: failure-screenshots-${{ matrix.python-version }}-${{ matrix.browser }}
+        path: test-results/screenshots/
+        retention-days: 7
+
+    - name: Publish HTML Report
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: html-report-${{ matrix.python-version }}-${{ matrix.browser }}
+        path: test-results/report.html
+        retention-days: 30
+
+    - name: Test Summary
+      if: always()
+      run: |
+        echo "## Test Execution Summary" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "- **Python Version**: ${{ matrix.python-version }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Browser**: ${{ matrix.browser }}" >> $GITHUB_STEP_SUMMARY
+        echo "- **Status**: ${{ job.status }}" >> $GITHUB_STEP_SUMMARY
+        echo "" >> $GITHUB_STEP_SUMMARY
+        echo "### Artifacts" >> $GITHUB_STEP_SUMMARY
+        echo "- HTML Report: test-results/report.html" >> $GITHUB_STEP_SUMMARY
+        echo "- Allure Results: test-results/allure-results/" >> $GITHUB_STEP_SUMMARY
+        echo "- Logs: test-results/logs/" >> $GITHUB_STEP_SUMMARY
+        echo "- Screenshots: test-results/screenshots/" >> $GITHUB_STEP_SUMMARY
+
+  smoke-tests:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.12'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install -r requirements.txt
+
+    - name: Install Playwright browsers
+      run: |
+        python -m playwright install chromium
+        python -m playwright install-deps chromium
+
+    - name: Run smoke tests
+      run: |
+        pytest tests/ -m smoke --headless -v
+
+    - name: Upload smoke test results
+      if: always()
+      uses: actions/upload-artifact@v3
+      with:
+        name: smoke-test-results
+        path: test-results/
+        retention-days: 7

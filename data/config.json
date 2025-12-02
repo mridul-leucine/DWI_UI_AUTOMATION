@@ -1,0 +1,25 @@
+{
+  "baseUrl": "https://qa.platform.leucinetech.com",
+  "timeout": {
+    "default": 30000,
+    "navigation": 60000,
+    "element": 10000
+  },
+  "browser": {
+    "headless": false,
+    "slowMo": 100,
+    "viewport": {
+      "width": 1920,
+      "height": 1080
+    }
+  },
+  "screenshots": {
+    "enabled": true,
+    "onFailure": true,
+    "directory": "test-results/screenshots"
+  },
+  "testData": {
+    "credentials": "data/credentials.json",
+    "processData": "data/qa_ui_all_para_test_data.json"
+  }
+}
