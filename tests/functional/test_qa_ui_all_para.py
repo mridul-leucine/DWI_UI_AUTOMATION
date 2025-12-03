@@ -322,7 +322,7 @@ class TestQAUIAllParaProcess:
 
         # Step 8: Fill all parameters
         print(f"\n[Step 8] Filling parameters...")
-        self._fill_all_parameters(page, test_data['parameters'])
+        self._fill_all_parameters(page, test_data['parameters'], creds)
         print("[OK] All parameters filled")
 
         # Step 9: Complete task (if complete button exists)
@@ -463,13 +463,14 @@ class TestQAUIAllParaProcess:
             except:
                 pass
 
-    def _fill_all_parameters(self, page, parameters):
+    def _fill_all_parameters(self, page, parameters, creds):
         """
         Fill all 7 parameters for the process.
 
         Args:
             page: Playwright page object
             parameters: Dictionary with parameter values
+            creds: Dictionary with user credentials
         """
         parameter_panel = ParameterPanel(page)
 
@@ -505,6 +506,26 @@ class TestQAUIAllParaProcess:
             print("    [WARNING] Last updated message not found, but continuing...")
 
         page.wait_for_timeout(1000)
+
+        # 1a. Perform self-verification for Number parameter (if enabled)
+        print("  - Checking for self-verification...")
+        if number_param.has_self_verify_button():
+            print("    Self-verification enabled, performing verification...")
+            number_param.perform_self_verification("Number", creds["password"])
+            print("    [OK] Self-verification completed")
+            page.wait_for_timeout(1500)
+        else:
+            print("    [INFO] Self-verification not enabled for this parameter")
+
+        # 1b. Perform peer verification for Number parameter (if enabled)
+        print("  - Checking for peer verification...")
+        if number_param.has_request_verification_button():
+            print("    Peer verification enabled, requesting verification from supervisor...")
+            number_param.perform_peer_verification("Number", creds["supervisor_username"], creds["supervisor_password"])
+            print("    [OK] Peer verification completed")
+            page.wait_for_timeout(1500)
+        else:
+            print("    [INFO] Peer verification not enabled for this parameter")
 
         # 2. Fill Single Line Text parameter
         print("  - Filling Single Line Text parameter...")
