@@ -13,10 +13,16 @@ This test covers the complete workflow:
 9. Validate completion
 """
 
+import sys
 import json
 import pytest
+from pathlib import Path
 from datetime import datetime
 from playwright.sync_api import sync_playwright
+
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
 
 from pom.login import LoginPage
 from pom.process_list_page import ProcessListPage
@@ -99,8 +105,9 @@ class TestQAUIAllParaProcess:
         print("Starting qa-ui-all para Process Test")
         print("="*60)
 
-        # Step 1: Login
-        print("\n[Step 1] Logging in...")
+        # Step 1: Login with Facility Admin account
+        print("\n[Step 1] Logging in with Facility Admin account...")
+        print(f"  - Username: {creds['username']}")
         login_page = LoginPage(page)
         facility_page = login_page.login(creds["username"], creds["password"])
         print("[OK] Login successful")
@@ -113,7 +120,7 @@ class TestQAUIAllParaProcess:
         print(f"  - Current URL: {page.url}")
 
         # Step 3: Navigate to Processes/Checklists page through UI
-        print(f"\n[Step 3] Navigating to processes page through UI...")
+        print(f"\n[Step 3] Navigating to processes page...")
 
         # Try to find navigation to processes/checklists
         # Common patterns: sidebar menu, top menu, links
@@ -123,8 +130,12 @@ class TestQAUIAllParaProcess:
             page.locator("a:has-text('Workflows')"),
             page.locator("[href*='checklists']"),
             page.locator("[href*='processes']"),
+            page.locator("[href*='/jobs']"),
             page.get_by_role("link", name="Processes"),
             page.get_by_role("link", name="Checklists"),
+            # Try sidebar/menu navigation
+            page.locator("nav a:has-text('Processes')"),
+            page.locator(".sidebar a:has-text('Processes')"),
         ]
 
         processes_link = None
@@ -142,7 +153,15 @@ class TestQAUIAllParaProcess:
             print(f"[OK] Navigated to processes page")
             print(f"  - Current URL: {page.url}")
         else:
-            print("  - No standard navigation found, using current page...")
+            print("  - No standard navigation found, using direct URL...")
+            # If no navigation found, use direct URL
+            current_url = page.url
+            base_url = current_url.split('/home')[0] if '/home' in current_url else current_url.rsplit('/', 1)[0]
+            jobs_url = f"{base_url}/jobs"
+            print(f"  - Navigating to: {jobs_url}")
+            page.goto(jobs_url)
+            page.wait_for_load_state("networkidle")
+            page.wait_for_timeout(2000)
             print(f"  - Current URL: {page.url}")
 
         # Step 4: Search for process and click Create Job
@@ -511,7 +530,7 @@ class TestQAUIAllParaProcess:
         print("  - Checking for self-verification...")
         if number_param.has_self_verify_button():
             print("    Self-verification enabled, performing verification...")
-            number_param.perform_self_verification("Number", creds["password"])
+            number_param.perform_self_verification("Number", creds["operator"]["password"])
             print("    [OK] Self-verification completed")
             page.wait_for_timeout(1500)
         else:
