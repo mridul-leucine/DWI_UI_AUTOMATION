@@ -330,7 +330,6 @@ class OntologyPage:
         if object_type_data.get("description"):
             self.fill_textarea_by_label("Description", object_type_data["description"])
 
-        # Scroll to see next sections
 
         # Section 2: Title Property
         print("\n    [Section 2] Title Property")
@@ -363,7 +362,6 @@ class OntologyPage:
             title_desc_input.blur()
             print(f"    [OK] Filled Title Property Description")
 
-        # Scroll to see next sections
 
         # Section 3: Identifier Property
         print("\n    [Section 3] Identifier Property")
