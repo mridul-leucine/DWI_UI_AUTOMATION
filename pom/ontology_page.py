@@ -531,26 +531,40 @@ class OntologyPage:
         """
         print("    Clicking Create New Property button...")
 
-        # Try multiple strategies
-        strategies = [
-            self.page.locator('button:has-text("Create New Property")'),
-            self.page.locator('button.ButtonWrapper--f4k2md:has-text("Create New Property")'),
-            self.page.get_by_role("button", name="Create New Property"),
-        ]
+        # Wait for any transitions/animations to complete
+        self.page.wait_for_timeout(1000)
 
-        create_button = None
-        for strategy in strategies:
-            if strategy.count() > 0:
-                create_button = strategy.first
-                break
+        # Try multiple strategies with retries
+        for attempt in range(3):
+            if attempt > 0:
+                print(f"    [INFO] Retry attempt {attempt + 1}/3...")
+                self.page.wait_for_timeout(1500)
 
-        if create_button:
-            create_button.wait_for(state="attached", timeout=10000)
-            create_button.scroll_into_view_if_needed()
-            create_button.click()
-            print("    [OK] Clicked Create New Property button")
-        else:
-            raise Exception("Could not find Create New Property button")
+            strategies = [
+                self.page.locator('button:has-text("Create New Property")'),
+                self.page.locator('button.ButtonWrapper--f4k2md:has-text("Create New Property")'),
+                self.page.get_by_role("button", name="Create New Property"),
+            ]
+
+            create_button = None
+            for strategy in strategies:
+                if strategy.count() > 0:
+                    create_button = strategy.first
+                    break
+
+            if create_button:
+                try:
+                    create_button.wait_for(state="attached", timeout=5000)
+                    create_button.scroll_into_view_if_needed()
+                    create_button.click()
+                    print("    [OK] Clicked Create New Property button")
+                    return
+                except Exception as e:
+                    if attempt == 2:
+                        raise Exception(f"Could not click Create New Property button: {str(e)}")
+                    continue
+
+        raise Exception("Could not find Create New Property button after 3 attempts")
 
     def fill_property_basic_info(self, property_data):
         """
