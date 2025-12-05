@@ -1,21 +1,31 @@
 """
-Multi-User Concurrent Test - Hybrid Sync/Async Approach
+Multi-User Concurrent Test - Async Approach (DEPRECATED - DOES NOT WORK)
 
-This demonstrates how to run multiple users concurrently while keeping
-most of the framework synchronous.
+WARNING: This file demonstrates the async approach which has fundamental
+incompatibility issues. Sync page objects cannot work with async playwright API.
+
+USE THIS INSTEAD: test_multi_user_threading.py
+
+The threading approach:
+- Works with all existing sync page objects
+- Provides true concurrent execution
+- No modifications to framework needed
 
 Scenario: Facility Admin creates/fills job while Supervisor approves in parallel
 """
 
+import sys
 import asyncio
 import json
 from pathlib import Path
 from playwright.async_api import async_playwright
 
+# Add project root to path
+project_root = Path(__file__).parent.parent.parent
+sys.path.insert(0, str(project_root))
+
 # Your existing SYNC page objects work as-is!
 # We just wrap them in async functions
-
-project_root = Path(__file__).parent.parent.parent
 
 
 def load_credentials():
@@ -53,19 +63,19 @@ async def facility_admin_workflow(browser_context):
             creds['facility_admin']['username'],
             creds['facility_admin']['password']
         )
-        print("[ADMIN] ✓ Logged in")
+        print("[ADMIN] [OK] Logged in")
 
         # 2. Select facility
         print("[ADMIN] Selecting facility...")
         home_page = facility_page.select_facility_and_proceed()
         await page.wait_for_timeout(2000)
-        print("[ADMIN] ✓ Facility selected")
+        print("[ADMIN] [OK] Facility selected")
 
         # 3. Select use case
         print("[ADMIN] Selecting Cleaning use case...")
         home_page.select_use_case("Cleaning")
         await page.wait_for_timeout(1000)
-        print("[ADMIN] ✓ Use case selected")
+        print("[ADMIN] [OK] Use case selected")
 
         # 4. Create job
         print("[ADMIN] Creating job...")
@@ -87,20 +97,20 @@ async def facility_admin_workflow(browser_context):
         await modal_btn.click()
         await page.wait_for_timeout(3000)
 
-        print("[ADMIN] ✓ Job created!")
+        print("[ADMIN] [OK] Job created!")
         print(f"[ADMIN] Job URL: {page.url}")
 
         # 5. Fill some parameters (simulated)
         print("[ADMIN] Filling parameters...")
         await page.wait_for_timeout(2000)
-        print("[ADMIN] ✓ Parameters filled (simulated)")
+        print("[ADMIN] [OK] Parameters filled (simulated)")
 
-        print("[ADMIN] ✓✓ Admin workflow complete!")
+        print("[ADMIN] [OK][OK] Admin workflow complete!")
 
         return {"status": "success", "url": page.url}
 
     except Exception as e:
-        print(f"[ADMIN] ✗ Error: {str(e)}")
+        print(f"[ADMIN] [ERROR] Error: {str(e)}")
         return {"status": "error", "message": str(e)}
     finally:
         await page.close()
@@ -128,13 +138,13 @@ async def supervisor_workflow(browser_context, admin_job_url=None):
             creds['supervisor_username'],  # qa_sv
             creds['supervisor_password']
         )
-        print("[SUPERVISOR] ✓ Logged in")
+        print("[SUPERVISOR] [OK] Logged in")
 
         # 2. Select facility
         print("[SUPERVISOR] Selecting facility...")
         home_page = facility_page.select_facility_and_proceed()
         await page.wait_for_timeout(2000)
-        print("[SUPERVISOR] ✓ Facility selected")
+        print("[SUPERVISOR] [OK] Facility selected")
 
         # 3. Go to inbox/tasks
         print("[SUPERVISOR] Checking inbox for approval tasks...")
@@ -145,16 +155,16 @@ async def supervisor_workflow(browser_context, admin_job_url=None):
         # Look for tasks needing approval
         tasks = page.locator("div:has-text('Pending Approval'), div:has-text('Verification')")
         if await tasks.count() > 0:
-            print(f"[SUPERVISOR] ✓ Found {await tasks.count()} tasks needing approval")
+            print(f"[SUPERVISOR] [OK] Found {await tasks.count()} tasks needing approval")
         else:
             print("[SUPERVISOR] No tasks found yet (admin may still be creating)")
 
-        print("[SUPERVISOR] ✓✓ Supervisor workflow complete!")
+        print("[SUPERVISOR] [OK][OK] Supervisor workflow complete!")
 
         return {"status": "success"}
 
     except Exception as e:
-        print(f"[SUPERVISOR] ✗ Error: {str(e)}")
+        print(f"[SUPERVISOR] [ERROR] Error: {str(e)}")
         return {"status": "error", "message": str(e)}
     finally:
         await page.close()
@@ -193,7 +203,7 @@ async def test_concurrent_multi_user():
 
         try:
             # Run BOTH workflows CONCURRENTLY using asyncio.gather()
-            print("\n🚀 Starting both users concurrently...\n")
+            print("\n>>> Starting both users concurrently...\n")
 
             admin_result, supervisor_result = await asyncio.gather(
                 facility_admin_workflow(admin_context),
