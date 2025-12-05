@@ -19,7 +19,7 @@ class MediaParameter:
         """
         upload_button = self._get_upload_button(parameter_label)
         upload_button.wait_for(state="visible", timeout=10000)
-        upload_button.scroll_into_view_if_needed()
+        upload_button
 
         # Note: Clicking may not work for file inputs, use upload_file method instead
 
@@ -43,7 +43,6 @@ class MediaParameter:
             if camera_link.count() == 0:
                 print("    [ERROR] 'User can capture photos' not found")
                 # Try scrolling down to find it
-                self.page.evaluate("window.scrollBy(0, 300)")
                 self.page.wait_for_timeout(1000)
 
                 camera_link = self.page.get_by_text("User can capture photos")
@@ -54,7 +53,7 @@ class MediaParameter:
             print(f"    Found 'User can capture photos' - count: {camera_link.count()}")
 
             # Click the element
-            camera_link.first.scroll_into_view_if_needed()
+            camera_link.first
             self.page.wait_for_timeout(500)
             camera_link.first.click()
             print("    [OK] Clicked 'User can capture photos' - camera popup should open...")

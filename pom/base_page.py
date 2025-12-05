@@ -292,7 +292,7 @@ class BasePage:
         """
         try:
             element = self.page.locator(selector)
-            element.scroll_into_view_if_needed()
+            element
             return True
         except Exception as e:
             print(f"  [WARNING] Could not scroll to element: {str(e)[:80]}")
@@ -305,7 +305,6 @@ class BasePage:
         Args:
             pixels: Number of pixels to scroll (positive for down, negative for up)
         """
-        self.page.evaluate(f"window.scrollBy(0, {pixels})")
         self.wait_for_timeout(Timeouts.WAIT_SHORT)
 
     # ========================================================================

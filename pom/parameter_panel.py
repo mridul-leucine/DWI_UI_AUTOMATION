@@ -26,7 +26,7 @@ class ParameterPanel:
         parameter_locator = self._get_parameter_container_by_label(parameter_label)
 
         if parameter_locator.count() > 0:
-            parameter_locator.first.scroll_into_view_if_needed()
+            parameter_locator.first
             self.page.wait_for_timeout(500)
 
     def is_parameter_visible(self, parameter_label):

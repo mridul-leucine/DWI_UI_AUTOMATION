@@ -20,7 +20,7 @@ class SingleLineParameter:
         # Wait for element to be visible and enabled
         print(f"    Waiting for {parameter_label} input field to be visible...")
         input_field.wait_for(state="visible", timeout=10000)
-        input_field.scroll_into_view_if_needed()
+        input_field
 
         # Wait for field to be enabled (not disabled)
         self.page.wait_for_timeout(500)

@@ -54,7 +54,7 @@ class Sidebar:
 
         if ontology_item:
             ontology_item.wait_for(state="visible", timeout=10000)
-            ontology_item.scroll_into_view_if_needed()
+            ontology_item
             ontology_item.click()
             self.page.wait_for_load_state("networkidle")
             self.page.wait_for_timeout(1000)
@@ -83,7 +83,7 @@ class Sidebar:
 
         if object_types_item:
             object_types_item.wait_for(state="visible", timeout=10000)
-            object_types_item.scroll_into_view_if_needed()
+            object_types_item
             object_types_item.click()
             self.page.wait_for_load_state("networkidle")
             self.page.wait_for_timeout(1000)
@@ -112,7 +112,7 @@ class Sidebar:
 
         if objects_item:
             objects_item.wait_for(state="visible", timeout=10000)
-            objects_item.scroll_into_view_if_needed()
+            objects_item
             objects_item.click()
             self.page.wait_for_load_state("networkidle")
             self.page.wait_for_timeout(1000)

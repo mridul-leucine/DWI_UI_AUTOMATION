@@ -19,7 +19,7 @@ class NumberParameter:
         input_field = self._get_number_input(parameter_label)
 
         input_field.wait_for(state="visible", timeout=10000)
-        input_field.scroll_into_view_if_needed()
+        input_field
 
         # Clear existing value
         input_field.clear()
@@ -194,7 +194,7 @@ class NumberParameter:
                 self_verify_btn = self.page.locator("button:has-text('Self Verify')")
 
             self_verify_btn.wait_for(state="visible", timeout=10000)
-            self_verify_btn.scroll_into_view_if_needed()
+            self_verify_btn
             self_verify_btn.click()
 
             print(f"    Clicked on Self Verify button")
@@ -346,7 +346,7 @@ class NumberParameter:
                 request_verify_btn = self.page.locator("button:has-text('Request')")
 
             request_verify_btn.wait_for(state="visible", timeout=10000)
-            request_verify_btn.scroll_into_view_if_needed()
+            request_verify_btn
             request_verify_btn.click()
 
             print(f"    Clicked on Request Verification button")
@@ -398,7 +398,7 @@ class NumberParameter:
 
             if user_row.count() > 0:
                 print(f"    Found row/container with supervisor")
-                user_row.scroll_into_view_if_needed()
+                user_row
                 self.page.wait_for_timeout(300)
 
                 # Find the label.container element that wraps the checkbox
@@ -410,7 +410,7 @@ class NumberParameter:
 
                     # Scroll the checkbox label specifically into view
                     print(f"    Scrolling checkbox label into viewport...")
-                    checkbox_label.scroll_into_view_if_needed()
+                    checkbox_label
                     self.page.wait_for_timeout(500)
 
                     # Find the actual checkbox input to check its state
@@ -543,7 +543,7 @@ class NumberParameter:
                 same_session_btn = self.page.locator("button:has-text('Same Session')")
 
             same_session_btn.wait_for(state="visible", timeout=10000)
-            same_session_btn.scroll_into_view_if_needed()
+            same_session_btn
             same_session_btn.click()
 
             print(f"    Clicked on Same Session Verification button")
@@ -570,7 +570,7 @@ class NumberParameter:
                 approve_btn = self.page.get_by_role("button", name="Approve")
 
             approve_btn.wait_for(state="visible", timeout=10000)
-            approve_btn.scroll_into_view_if_needed()
+            approve_btn
             approve_btn.click()
 
             print(f"    Clicked on Approve button")
@@ -607,7 +607,7 @@ class NumberParameter:
                 password_field = password_field.first
 
             password_field.wait_for(state="visible", timeout=10000)
-            password_field.scroll_into_view_if_needed()
+            password_field
             password_field.clear()
             password_field.fill(password)
 
@@ -626,7 +626,7 @@ class NumberParameter:
                 verify_btn = self.page.get_by_role("button", name="Verify")
 
             verify_btn.wait_for(state="visible", timeout=10000)
-            verify_btn.scroll_into_view_if_needed()
+            verify_btn
             verify_btn.click()
 
             print(f"    Clicked on Verify button")

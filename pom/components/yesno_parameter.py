@@ -16,7 +16,7 @@ class YesNoParameter:
         """
         yes_option = self._get_yes_option(parameter_label)
         yes_option.wait_for(state="visible", timeout=10000)
-        yes_option.scroll_into_view_if_needed()
+        yes_option
         self.page.wait_for_timeout(500)
 
         # Wait for button to be enabled
@@ -42,7 +42,7 @@ class YesNoParameter:
         """
         no_option = self._get_no_option(parameter_label)
         no_option.wait_for(state="visible", timeout=10000)
-        no_option.scroll_into_view_if_needed()
+        no_option
         self.page.wait_for_timeout(500)
 
         # Wait for button to be enabled
