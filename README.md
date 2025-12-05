@@ -1,8 +1,11 @@
 # DWI UI Automation Framework
 
-Comprehensive Python + Playwright automation framework for testing the DWI platform processes, with specific support for the 'qa-ui-all para' process (CHK-DEC25-4).
+**Production-ready** Python + Playwright automation framework for testing DWI platform processes.
+
+Built with **reusability, scalability, and maintainability** as core principles.
 
 ## Table of Contents
+- [Framework Architecture](#framework-architecture)
 - [Prerequisites](#prerequisites)
 - [Installation](#installation)
 - [Project Structure](#project-structure)
@@ -12,6 +15,50 @@ Comprehensive Python + Playwright automation framework for testing the DWI platf
 - [Reporting](#reporting)
 - [Troubleshooting](#troubleshooting)
 - [Contributing](#contributing)
+
+## Framework Architecture
+
+### 🎯 Core Principles
+- **Reusability**: BasePage class with common functionality - write once, use everywhere
+- **Scalability**: Easy to add new tests and page objects
+- **Maintainability**: Centralized constants, clear structure, explicit over implicit
+- **DRY**: Don't Repeat Yourself - single source of truth for all configurations
+
+### 🏗️ Key Components
+
+#### 1. BasePage (`pom/base_page.py`)
+All page objects inherit from `BasePage`, providing:
+- **Navigation**: `navigate_to()`, `get_current_url()`, `wait_for_load_state()`
+- **Element Interaction**: `click_element()`, `fill_input()`, `get_text()`
+- **Waits**: `wait_for_element()`, `wait_for_timeout()`
+- **Validation**: `is_element_visible()`, `verify_url_contains()`
+- **Utilities**: `take_screenshot()`, `scroll_to_element()`, `refresh_page()`
+
+#### 2. Constants (`pom/constants.py`)
+Centralized configuration:
+- **Timeouts**: `Timeouts.DEFAULT`, `Timeouts.NAVIGATION`, `Timeouts.ELEMENT`
+- **Locator Strategies**: Common locator patterns
+- **UI Messages**: Standard UI messages for validation
+- **Paths**: File and directory paths
+- **Parameter Types**: All parameter type constants
+
+#### 3. Page Objects
+Each page inherits from `BasePage` and adds page-specific functionality:
+```python
+from pom.base_page import BasePage
+from pom.constants import Timeouts
+
+class LoginPage(BasePage):
+    def __init__(self, page):
+        super().__init__(page)
+        # Page-specific logic
+```
+
+### ✨ Benefits
+- **Write less code**: Common functionality in one place
+- **Easier debugging**: Consistent patterns across all tests
+- **Faster test development**: Reuse existing components
+- **Better maintainability**: Change once, apply everywhere
 
 ## Prerequisites
 
@@ -64,12 +111,16 @@ test-resources/images/sample-test-image.jpg
 dwi_playwright_automation/
 │
 ├── pom/                          # Page Object Model
+│   ├── base_page.py              # ⭐ Base class for all pages (NEW)
+│   ├── constants.py              # ⭐ Centralized constants (NEW)
 │   ├── login.py                  # Login page
 │   ├── facility_selection.py    # Facility selection page
-│   ├── home_page.py              # Home page
+│   ├── home_page.py              # Home page with use case selection
 │   ├── process_list_page.py     # Process list page
 │   ├── job_creation_page.py     # Job creation modal
 │   ├── job_execution_page.py    # Job execution page
+│   ├── ontology_page.py          # ⭐ Ontology management (NEW)
+│   ├── sidebar.py                # ⭐ Sidebar navigation (NEW)
 │   ├── task_navigation_panel.py # Task navigation panel
 │   ├── parameter_panel.py       # Parameter panel base
 │   └── components/              # Parameter components
@@ -82,9 +133,12 @@ dwi_playwright_automation/
 │       └── media_parameter.py
 │
 ├── tests/
-│   └── functional/
-│       ├── test_dwi_login.py              # Login test
-│       └── test_qa_ui_all_para.py         # Main E2E test
+│   ├── functional/
+│   │   ├── test_qa_ui_all_para.py          # Process execution test (7 params)
+│   │   └── test_create_object_type.py      # ⭐ Ontology management test (NEW)
+│   ├── test_suite_all.py                   # ⭐ Run all tests (NEW)
+│   ├── test_suite_process_execution.py     # ⭐ Process suite (NEW)
+│   └── test_suite_ontology.py              # ⭐ Ontology suite (NEW)
 │
 ├── utils/                        # Utility modules
 │   ├── test_data_manager.py     # Test data management
