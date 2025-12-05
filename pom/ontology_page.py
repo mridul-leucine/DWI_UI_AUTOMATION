@@ -545,8 +545,8 @@ class OntologyPage:
                 break
 
         if create_button:
-            create_button.wait_for(state="visible", timeout=10000)
-            create_button
+            create_button.wait_for(state="attached", timeout=10000)
+            create_button.scroll_into_view_if_needed()
             create_button.click()
             print("    [OK] Clicked Create New Property button")
         else:
@@ -948,8 +948,8 @@ class OntologyPage:
                 break
 
         if create_button:
-            create_button.wait_for(state="visible", timeout=5000)
-            create_button
+            create_button.wait_for(state="attached", timeout=5000)
+            create_button.scroll_into_view_if_needed()
 
             try:
                 create_button.click(timeout=3000)
