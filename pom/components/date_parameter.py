@@ -21,7 +21,7 @@ class DateParameter:
 
         date_input = self._get_date_picker_trigger(parameter_label)
         date_input.wait_for(state="visible", timeout=5000)
-        date_input.scroll_into_view_if_needed()
+        date_input
         self.page.wait_for_timeout(500)
 
         # Wait for field to be enabled
@@ -54,7 +54,7 @@ class DateParameter:
 
         # Wait for element to be both visible and stable
         date_picker_trigger.wait_for(state="visible", timeout=5000)
-        date_picker_trigger.scroll_into_view_if_needed()
+        date_picker_trigger
 
         # Wait a bit for any animations to complete
         self.page.wait_for_timeout(500)

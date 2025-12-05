@@ -16,7 +16,7 @@ class ResourceParameter:
         """
         dropdown_trigger = self._get_resource_dropdown_trigger(parameter_label)
         dropdown_trigger.wait_for(state="visible", timeout=10000)
-        dropdown_trigger.scroll_into_view_if_needed()
+        dropdown_trigger
         self.page.wait_for_timeout(500)
 
         # Wait for field to be enabled

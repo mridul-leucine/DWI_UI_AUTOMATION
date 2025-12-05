@@ -19,7 +19,7 @@ class SingleSelectParameter:
         # Scroll to dropdown first
         print(f"    Scrolling to SSD dropdown...")
         try:
-            dropdown_trigger.scroll_into_view_if_needed()
+            dropdown_trigger
             self.page.wait_for_timeout(500)
         except Exception as e:
             print(f"    Warning: Could not scroll to dropdown: {str(e)[:50]}")

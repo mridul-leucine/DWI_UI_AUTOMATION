@@ -47,7 +47,13 @@
       "Bash(if exist searching_yesno.png del searching_yesno.png)",
       "Bash(if exist modal_opened.png del modal_opened.png)",
       "Bash(git add:*)",
-      "Bash(git merge:*)"
+      "Bash(git push:*)",
+      "Bash(git checkout:*)",
+      "Bash(timeout 240 python -m pytest:*)",
+      "Bash(timeout 300 python:*)",
+      "Bash(git commit:*)",
+      "Bash(grep:*)",
+      "Bash(ls:*)"
     ],
     "deny": [],
     "ask": []

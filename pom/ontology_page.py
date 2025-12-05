@@ -65,7 +65,7 @@ class OntologyPage:
 
         if add_button:
             add_button.wait_for(state="visible", timeout=10000)
-            add_button.scroll_into_view_if_needed()
+            add_button
             add_button.click()
             print("    [OK] Clicked Add New Object Type button")
         else:
@@ -127,7 +127,7 @@ class OntologyPage:
 
         if object_type_row.count() > 0:
             object_type_row.wait_for(state="visible", timeout=10000)
-            object_type_row.scroll_into_view_if_needed()
+            object_type_row
             object_type_row.click()
             print(f"    [OK] Clicked on Object Type: {object_type_name}")
         else:
@@ -255,7 +255,7 @@ class OntologyPage:
                 input_field = container.locator('input').first
 
             if input_field.count() > 0:
-                input_field.scroll_into_view_if_needed()
+                input_field
                 input_field.clear()
                 input_field.fill(value)
                 input_field.blur()
@@ -265,7 +265,7 @@ class OntologyPage:
         # Strategy 2: Find by placeholder
         input_by_placeholder = self.page.locator(f'input[placeholder*="{label_text}" i]').first
         if input_by_placeholder.count() > 0:
-            input_by_placeholder.scroll_into_view_if_needed()
+            input_by_placeholder
             input_by_placeholder.clear()
             input_by_placeholder.fill(value)
             input_by_placeholder.blur()
@@ -297,7 +297,7 @@ class OntologyPage:
                 textarea = container.locator('textarea').first
 
             if textarea.count() > 0:
-                textarea.scroll_into_view_if_needed()
+                textarea
                 textarea.clear()
                 textarea.fill(value)
                 textarea.blur()
@@ -330,8 +330,6 @@ class OntologyPage:
         if object_type_data.get("description"):
             self.fill_textarea_by_label("Description", object_type_data["description"])
 
-        # Scroll to see next sections
-        self.page.evaluate("window.scrollBy(0, 300)")
 
         # Section 2: Title Property
         print("\n    [Section 2] Title Property")
@@ -350,7 +348,7 @@ class OntologyPage:
 
         if input_count >= 3:
             title_display_input = all_inputs.nth(2)  # 3rd input (index 2)
-            title_display_input.scroll_into_view_if_needed()
+            title_display_input
             title_display_input.clear()
             title_display_input.fill(object_type_data.get("title_property_display_name", ""))
             title_display_input.blur()
@@ -358,15 +356,12 @@ class OntologyPage:
 
         if object_type_data.get("title_property_description") and input_count >= 4:
             title_desc_input = all_inputs.nth(3)  # 4th input (index 3)
-            title_desc_input.scroll_into_view_if_needed()
+            title_desc_input
             title_desc_input.clear()
             title_desc_input.fill(object_type_data["title_property_description"])
             title_desc_input.blur()
             print(f"    [OK] Filled Title Property Description")
 
-        # Scroll to see next sections
-        self.page.evaluate("window.scrollBy(0, 300)")
-        self.page.wait_for_timeout(500)  # Wait for form to render after scroll
 
         # Section 3: Identifier Property
         print("\n    [Section 3] Identifier Property")
@@ -387,7 +382,7 @@ class OntologyPage:
 
         if input_count >= 5:
             identifier_display_input = all_inputs.nth(4)  # 5th input (index 4)
-            identifier_display_input.scroll_into_view_if_needed()
+            identifier_display_input
             identifier_display_input.clear()
             identifier_display_input.fill(object_type_data.get("identifier_property_display_name", ""))
             identifier_display_input.blur()
@@ -395,7 +390,7 @@ class OntologyPage:
 
         if object_type_data.get("identifier_property_description") and input_count >= 6:
             identifier_desc_input = all_inputs.nth(5)  # 6th input (index 5)
-            identifier_desc_input.scroll_into_view_if_needed()
+            identifier_desc_input
             identifier_desc_input.clear()
             identifier_desc_input.fill(object_type_data["identifier_property_description"])
             identifier_desc_input.blur()
@@ -405,7 +400,7 @@ class OntologyPage:
         print("\n    [Section 4] Reason (if required)")
         reason_textarea = self.page.locator('textarea[placeholder*="comments" i], textarea[placeholder*="reason" i]').first
         if reason_textarea.count() > 0:
-            reason_textarea.scroll_into_view_if_needed()
+            reason_textarea
             reason_textarea.clear()
             reason_textarea.fill("Automated test object type creation")
             reason_textarea.blur()
@@ -435,7 +430,7 @@ class OntologyPage:
 
         if submit_button:
             submit_button.wait_for(state="visible", timeout=10000)
-            submit_button.scroll_into_view_if_needed()
+            submit_button
             submit_button.click()
             print("    [OK] Clicked Submit button")
         else:
@@ -457,7 +452,7 @@ class OntologyPage:
 
         if search_input.count() > 0:
             search_input.wait_for(state="visible", timeout=10000)
-            search_input.scroll_into_view_if_needed()
+            search_input
             search_input.clear()
             search_input.fill(object_type_name)
             self.page.wait_for_timeout(2000)  # Wait for search results to load
@@ -493,7 +488,7 @@ class OntologyPage:
 
         if object_type_element:
             object_type_element.wait_for(state="visible", timeout=10000)
-            object_type_element.scroll_into_view_if_needed()
+            object_type_element
             object_type_element.click()
             print(f"    [OK] Clicked on object type: {object_type_name}")
         else:
@@ -522,7 +517,7 @@ class OntologyPage:
 
         if properties_tab:
             properties_tab.wait_for(state="visible", timeout=10000)
-            properties_tab.scroll_into_view_if_needed()
+            properties_tab
             properties_tab.click()
             print("    [OK] Navigated to Properties tab")
         else:
@@ -536,26 +531,40 @@ class OntologyPage:
         """
         print("    Clicking Create New Property button...")
 
-        # Try multiple strategies
-        strategies = [
-            self.page.locator('button:has-text("Create New Property")'),
-            self.page.locator('button.ButtonWrapper--f4k2md:has-text("Create New Property")'),
-            self.page.get_by_role("button", name="Create New Property"),
-        ]
+        # Wait for any transitions/animations to complete
+        self.page.wait_for_timeout(1000)
 
-        create_button = None
-        for strategy in strategies:
-            if strategy.count() > 0:
-                create_button = strategy.first
-                break
+        # Try multiple strategies with retries
+        for attempt in range(3):
+            if attempt > 0:
+                print(f"    [INFO] Retry attempt {attempt + 1}/3...")
+                self.page.wait_for_timeout(1500)
 
-        if create_button:
-            create_button.wait_for(state="visible", timeout=10000)
-            create_button.scroll_into_view_if_needed()
-            create_button.click()
-            print("    [OK] Clicked Create New Property button")
-        else:
-            raise Exception("Could not find Create New Property button")
+            strategies = [
+                self.page.locator('button:has-text("Create New Property")'),
+                self.page.locator('button.ButtonWrapper--f4k2md:has-text("Create New Property")'),
+                self.page.get_by_role("button", name="Create New Property"),
+            ]
+
+            create_button = None
+            for strategy in strategies:
+                if strategy.count() > 0:
+                    create_button = strategy.first
+                    break
+
+            if create_button:
+                try:
+                    create_button.wait_for(state="attached", timeout=5000)
+                    create_button.scroll_into_view_if_needed()
+                    create_button.click()
+                    print("    [OK] Clicked Create New Property button")
+                    return
+                except Exception as e:
+                    if attempt == 2:
+                        raise Exception(f"Could not click Create New Property button: {str(e)}")
+                    continue
+
+        raise Exception("Could not find Create New Property button after 3 attempts")
 
     def fill_property_basic_info(self, property_data):
         """
@@ -571,7 +580,7 @@ class OntologyPage:
         # Label field
         label_input = self.page.locator('input[placeholder="Write here"]').first
         if label_input.count() > 0:
-            label_input.scroll_into_view_if_needed()
+            label_input
             label_input.clear()
             label_input.fill(property_data.get("label", ""))
             label_input.blur()
@@ -581,7 +590,7 @@ class OntologyPage:
         if property_data.get("description"):
             desc_input = self.page.locator('input[placeholder="Write Here"]').first
             if desc_input.count() > 0:
-                desc_input.scroll_into_view_if_needed()
+                desc_input
                 desc_input.clear()
                 desc_input.fill(property_data["description"])
                 desc_input.blur()
@@ -599,7 +608,7 @@ class OntologyPage:
 
         if next_button.count() > 0:
             next_button.wait_for(state="visible", timeout=10000)
-            next_button.scroll_into_view_if_needed()
+            next_button
             next_button.click()
             print("    [OK] Clicked Next button")
         else:
@@ -645,7 +654,7 @@ class OntologyPage:
                     # Find react-select within this container
                     dropdown = container.locator('div.react-custom-select, div[class*="react-custom-select"]').first
                     if dropdown.count() > 0:
-                        dropdown.scroll_into_view_if_needed()
+                        dropdown
                         dropdown.click(force=True)
                         print("    [OK] Clicked on parameter type dropdown in form")
 
@@ -656,7 +665,7 @@ class OntologyPage:
                         # Try clicking input field within container
                         input_field = container.locator('input[role="combobox"]').first
                         if input_field.count() > 0:
-                            input_field.scroll_into_view_if_needed()
+                            input_field
                             input_field.click(force=True)
                             print("    [OK] Clicked on parameter type input field")
         except Exception as e:
@@ -701,7 +710,7 @@ class OntologyPage:
                     option = strategy.first
                     print(f"    [INFO] Strategy {i+1}: Found {strategy.count()} matching elements")
                     option.wait_for(state="visible", timeout=5000)
-                    option.scroll_into_view_if_needed()
+                    option
 
                     # Try force click to bypass any overlays
                     option.click(force=True)
@@ -732,7 +741,7 @@ class OntologyPage:
 
                 if add_new_button.count() > 0:
                     add_new_button.wait_for(state="visible", timeout=5000)
-                    add_new_button.scroll_into_view_if_needed()
+                    add_new_button
                     add_new_button.click(force=True)
                     print(f"    [OK] Clicked '+ Add New' button")
                 else:
@@ -751,7 +760,7 @@ class OntologyPage:
 
                 if input_field.count() > 0:
                     input_field.wait_for(state="visible", timeout=5000)
-                    input_field.scroll_into_view_if_needed()
+                    input_field
                     input_field.click()
                     input_field.fill(option_value)
                     input_field.blur()  # Blur to ensure value is saved
@@ -788,7 +797,7 @@ class OntologyPage:
                 break
 
         if reason_textarea:
-            reason_textarea.scroll_into_view_if_needed()
+            reason_textarea
             reason_textarea.clear()
             reason_textarea.fill(reason_text)
             reason_textarea.blur()
@@ -807,7 +816,7 @@ class OntologyPage:
 
         if sidebar.count() > 0:
             sidebar.wait_for(state="visible", timeout=10000)
-            sidebar.scroll_into_view_if_needed()
+            sidebar
             sidebar.click()
             print("    [OK] Navigated to Objects section")
         else:
@@ -834,7 +843,7 @@ class OntologyPage:
 
         if create_button:
             create_button.wait_for(state="visible", timeout=10000)
-            create_button.scroll_into_view_if_needed()
+            create_button
             create_button.click()
             print("    [OK] Clicked Create New Object button")
         else:
@@ -889,7 +898,7 @@ class OntologyPage:
 
                 if input_field.count() > 0:
                     input_field.wait_for(state="visible", timeout=5000)
-                    input_field.scroll_into_view_if_needed()
+                    input_field
                     input_field.click()
                     input_field.fill(str(field_value))
                     input_field.blur()
@@ -921,7 +930,7 @@ class OntologyPage:
 
         if relations_tab:
             relations_tab.wait_for(state="visible", timeout=10000)
-            relations_tab.scroll_into_view_if_needed()
+            relations_tab
             relations_tab.click()
             print("    [OK] Navigated to Relations tab")
         else:
@@ -953,7 +962,7 @@ class OntologyPage:
                 break
 
         if create_button:
-            create_button.wait_for(state="visible", timeout=5000)
+            create_button.wait_for(state="attached", timeout=5000)
             create_button.scroll_into_view_if_needed()
 
             try:
@@ -1000,7 +1009,7 @@ class OntologyPage:
 
                 if label_input.count() > 0:
                     label_input.wait_for(state="visible", timeout=5000)
-                    label_input.scroll_into_view_if_needed()
+                    label_input
                     label_input.click()
                     label_input.fill(relation_data["label"])
                     label_input.blur()
@@ -1033,7 +1042,7 @@ class OntologyPage:
                     raise Exception("Could not find Object Type combobox")
 
                 # Click and paste (fill)
-                select_obj_type_input.scroll_into_view_if_needed()
+                select_obj_type_input
                 select_obj_type_input.click()
 
                 # Paste the value instead of typing
@@ -1072,7 +1081,7 @@ class OntologyPage:
                     desc_input = self.page.locator('input[placeholder*="Write" i]').nth(1)
 
                 if desc_input.count() > 0:
-                    desc_input.scroll_into_view_if_needed()
+                    desc_input
                     desc_input.click()
                     desc_input.fill(relation_data["description"])
                     desc_input.blur()
@@ -1105,7 +1114,7 @@ class OntologyPage:
                     raise Exception("Could not find Cardinality combobox")
 
                 # Click and paste (fill)
-                select_cardinality_input.scroll_into_view_if_needed()
+                select_cardinality_input
                 select_cardinality_input.click()
 
                 # Paste the value instead of typing
@@ -1167,7 +1176,7 @@ class OntologyPage:
 
                 if reason_textarea.count() > 0:
                     reason_textarea.wait_for(state="visible", timeout=5000)
-                    reason_textarea.scroll_into_view_if_needed()
+                    reason_textarea
                     reason_textarea.click()
                     reason_textarea.fill(relation_data["reason"])
                     reason_textarea.blur()
@@ -1238,7 +1247,7 @@ class OntologyPage:
         if create_button:
             try:
                 create_button.wait_for(state="visible", timeout=5000)
-                create_button.scroll_into_view_if_needed()
+                create_button
 
                 try:
                     create_button.click(timeout=3000)
@@ -1305,7 +1314,7 @@ class OntologyPage:
         if create_button:
             try:
                 create_button.wait_for(state="visible", timeout=10000)
-                create_button.scroll_into_view_if_needed()
+                create_button
 
                 # Try normal click first
                 try:

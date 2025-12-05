@@ -80,7 +80,7 @@ class TaskNavigationPanel:
 
         for locator in task_locators:
             if locator.count() > 0:
-                locator.first.scroll_into_view_if_needed()
+                locator.first
                 locator.first.wait_for(state="visible", timeout=10000)
                 locator.first.click()
                 self.wait_for_task_content_load()
@@ -96,7 +96,7 @@ class TaskNavigationPanel:
             task_name: The name of the task
         """
         task_locator = self.page.locator(f"[class*='task']:has-text('{task_name}')")
-        task_locator.first.scroll_into_view_if_needed()
+        task_locator.first
         task_locator.first.wait_for(state="visible", timeout=10000)
         task_locator.first.click()
 
@@ -113,7 +113,7 @@ class TaskNavigationPanel:
 
         # Now click the first task
         if self.task_cards.count() > 0:
-            self.task_cards.first.scroll_into_view_if_needed()
+            self.task_cards.first
             self.task_cards.first.wait_for(state="visible", timeout=10000)
             self.task_cards.first.click()
             self.wait_for_task_content_load()
@@ -212,7 +212,7 @@ class TaskNavigationPanel:
         task_locator = self.page.locator(f"[class*='task']:has-text('{task_name}')")
 
         if task_locator.count() > 0:
-            task_locator.first.scroll_into_view_if_needed()
+            task_locator.first
             self.page.wait_for_timeout(500)
 
     def get_all_tasks_count(self):
