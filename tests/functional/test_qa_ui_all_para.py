@@ -112,11 +112,20 @@ class TestQAUIAllParaProcess:
         facility_page = login_page.login(creds["username"], creds["password"])
         print("[OK] Login successful")
 
-        # Step 2: Select Facility and Use Case
+        # Step 2: Select Facility
         print(f"\n[Step 2] Selecting facility: {test_data['facility']['name']}")
         home_page = facility_page.select_facility_and_proceed()
-        page.wait_for_timeout(3000)
-        print(f"[OK] Facility and use case selected: {test_data['facility']['name']}")
+        page.wait_for_timeout(2000)
+        print(f"[OK] Facility selected: {test_data['facility']['name']}")
+        print(f"  - Current URL: {page.url}")
+
+        # Step 2.5: Select Use Case (Cleaning)
+        print(f"\n[Step 2.5] Selecting use case: {test_data['useCase']['name']}")
+        if home_page.select_use_case(test_data['useCase']['name']):
+            print(f"[OK] Use case selected: {test_data['useCase']['name']}")
+            page.wait_for_timeout(1000)
+        else:
+            print(f"[INFO] Use case selection not needed or already selected")
         print(f"  - Current URL: {page.url}")
 
         # Step 3: Navigate to Processes/Checklists page through UI

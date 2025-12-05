@@ -1,20 +1,51 @@
 class HomePage:
+    """
+    Home Page Object - Handles use case selection and navigation.
+
+    Principles:
+    - Explicit is better than implicit (no auto-clicks in __init__)
+    - Reusable across different test scenarios
+    - Flexible for different use cases
+    """
 
     def __init__(self, page):
+        """
+        Initialize HomePage without any automatic actions.
+
+        Args:
+            page: Playwright page object
+        """
         self.page = page
-        # Automatically click the Cleaning use case card when HomePage is initialized
+        # Just locate elements, don't click anything automatically
         self.cleaning_box = self.page.locator(".use-case-card-body", has_text="Cleaning")
+
+    def select_use_case(self, use_case_name="Cleaning"):
+        """
+        Select a use case by clicking on its card.
+
+        Args:
+            use_case_name: Name of the use case to select (default: "Cleaning")
+
+        Returns:
+            bool: True if successful, False otherwise
+        """
         try:
-            # Wait for the card to be visible and click it
-            self.cleaning_box.wait_for(state="visible", timeout=10000)
-            self.cleaning_box.click()
+            use_case_card = self.page.locator(".use-case-card-body", has_text=use_case_name)
+            use_case_card.wait_for(state="visible", timeout=10000)
+            use_case_card.click()
             self.page.wait_for_timeout(1000)
+            return True
         except Exception as e:
-            print(f"  [WARNING] Could not auto-click Cleaning card: {str(e)[:50]}")
+            print(f"  [WARNING] Could not select use case '{use_case_name}': {str(e)[:80]}")
+            return False
 
     def go_to_home_page(self):
-        """Navigate to home page by clicking cleaning use case"""
-        self.cleaning_box.click()
+        """
+        Legacy method - clicks cleaning use case.
+        Kept for backward compatibility.
+        Consider using select_use_case() instead.
+        """
+        return self.select_use_case("Cleaning")
 
     def navigate_to_processes(self):
         """
