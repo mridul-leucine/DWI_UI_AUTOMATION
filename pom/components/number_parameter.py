@@ -271,7 +271,17 @@ class NumberParameter:
             bool: True if Self Verify button exists, False otherwise
         """
         try:
+            # Primary strategy: Using parameter-verification class
             self_verify_btn = self.page.locator(".parameter-verification button:has-text('Self Verify')")
+
+            if self_verify_btn.count() == 0:
+                # Fallback: Using button class and text
+                self_verify_btn = self.page.locator("button.ButtonWrapper--f4k2md.cDUmUR:has-text('Self Verify')")
+
+            if self_verify_btn.count() == 0:
+                # Final fallback: Just by text
+                self_verify_btn = self.page.locator("button:has-text('Self Verify')")
+
             return self_verify_btn.count() > 0
         except:
             return False
