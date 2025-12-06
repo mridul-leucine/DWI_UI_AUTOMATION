@@ -502,18 +502,36 @@ class OntologyPage:
         """
         print("    Navigating to Properties tab...")
 
+        # Wait for page to load after clicking object type
+        self.page.wait_for_timeout(2000)
+
+        # Take screenshot for debugging
+        try:
+            self.page.screenshot(path="debug_properties_tab.png")
+            print("    [DEBUG] Screenshot saved: debug_properties_tab.png")
+        except:
+            pass
+
         # Find Properties tab
         strategies = [
             self.page.locator('div.tab-header-item:has-text("Properties")'),
             self.page.locator('span:has-text("Properties")').locator('xpath=ancestor::div[contains(@class, "tab-header-item")]'),
             self.page.get_by_text("Properties", exact=True).locator('xpath=ancestor::div[contains(@class, "tab")]'),
+            self.page.get_by_text("Properties"),
+            self.page.locator('div:has-text("Properties")'),
         ]
 
         properties_tab = None
-        for strategy in strategies:
-            if strategy.count() > 0:
-                properties_tab = strategy.first
-                break
+        for idx, strategy in enumerate(strategies):
+            try:
+                count = strategy.count()
+                print(f"    [DEBUG] Strategy {idx+1} found {count} elements")
+                if count > 0:
+                    properties_tab = strategy.first
+                    print(f"    [DEBUG] Using strategy {idx+1}")
+                    break
+            except Exception as e:
+                print(f"    [DEBUG] Strategy {idx+1} error: {str(e)[:50]}")
 
         if properties_tab:
             properties_tab.wait_for(state="visible", timeout=10000)
@@ -521,6 +539,7 @@ class OntologyPage:
             properties_tab.click()
             print("    [OK] Navigated to Properties tab")
         else:
+            print("    [ERROR] Could not find Properties tab with any strategy")
             raise Exception("Could not find Properties tab")
 
     def click_create_new_property_button(self):

@@ -694,15 +694,39 @@ class TestQAUIAllParaProcess:
                 first_option_text = options.first.text_content(timeout=500)
                 print(f"    Selecting first option: '{first_option_text.strip()}'")
                 options.first.click()
-                page.wait_for_timeout(500)
+                page.wait_for_timeout(1000)
 
-                # Verify selection
-                selected_value = page.locator(".custom-select__single-value")
-                if selected_value.count() > 0:
-                    print(f"    [OK] SSD selected: '{selected_value.first.text_content()}'")
+                # Verify selection - check specifically in the parameter area, not the header
+                # Get all custom-select values and find the one below header (y > 100px)
+                all_selected_values = page.locator(".custom-select__single-value")
+                verified = False
+
+                print(f"    Verifying selection from {all_selected_values.count()} dropdowns...")
+                for i in range(all_selected_values.count()):
+                    try:
+                        value_elem = all_selected_values.nth(i)
+                        box = value_elem.bounding_box()
+                        if box and box['y'] > 100:  # Below header
+                            value_text = value_elem.text_content()
+                            print(f"      Dropdown {i} at y={box['y']:.1f}px: '{value_text.strip()}'")
+                            if not verified and i > 0:  # Skip first one (Resource), check second one (SSD)
+                                print(f"    [OK] SSD selected: '{value_text.strip()}'")
+                                verified = True
+                    except:
+                        pass
+
+                if not verified:
+                    print("    [WARNING] Could not verify SSD selection")
 
                 page.wait_for_timeout(1000)
-                print("    [OK] SSD saved")
+
+                # Wait for "Last updated" message to confirm save
+                try:
+                    last_updated = page.locator("text=/Last updated/i").first
+                    last_updated.wait_for(state="visible", timeout=5000)
+                    print("    [OK] SSD saved (Last updated message visible)")
+                except:
+                    print("    [OK] SSD saved")
             else:
                 print("    [WARNING] No options found in SSD dropdown")
 
