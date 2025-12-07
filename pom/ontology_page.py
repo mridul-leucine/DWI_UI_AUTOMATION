@@ -843,14 +843,17 @@ class OntologyPage:
 
     def click_create_new_object_button(self):
         """
-        Click the "Create New Object" or "Add Object" button.
+        Click the "Create New" or "Create New Object" button to create an object instance.
+        This may open a dropdown menu - if so, click on the "Create" option.
         """
         print("    Clicking Create New Object button...")
 
         strategies = [
+            self.page.locator('button:has-text("Create New")').first,
             self.page.locator('button:has-text("Create New Object")').first,
             self.page.locator('button:has-text("Add Object")').first,
             self.page.locator('button:has-text("Create Object")').first,
+            self.page.get_by_role("button", name="Create New"),
             self.page.get_by_role("button", name="Create New Object"),
         ]
 
@@ -858,13 +861,88 @@ class OntologyPage:
         for strategy in strategies:
             if strategy.count() > 0:
                 create_button = strategy
+                print(f"    [DEBUG] Found button using strategy")
                 break
 
         if create_button:
             create_button.wait_for(state="visible", timeout=10000)
-            create_button
             create_button.click()
-            print("    [OK] Clicked Create New Object button")
+            print("    [OK] Clicked Create New button")
+
+            # Wait for dropdown to appear (if it's a dropdown button)
+            self.page.wait_for_timeout(1000)
+
+            # Check if a dropdown menu appeared with "Create" and "Import" options
+            # Try multiple strategies to find the "Create" option
+            dropdown_selectors = [
+                # Try visible elements containing exactly "Create" text
+                ':visible:has-text("Create")',
+                # Material-UI menu items
+                'li[role="menuitem"]:has-text("Create")',
+                'li.MuiMenuItem-root:has-text("Create")',
+                '[role="menuitem"]:has-text("Create")',
+                # Div with specific classes
+                'div.NestedOption--csgrkz:has-text("Create")',
+                'div[class*="NestedOption"]:has-text("Create")',
+                # Generic patterns
+                'div:visible:has-text("Create")',
+                'li:visible:has-text("Create")',
+            ]
+
+            dropdown_create_option = None
+            for selector in dropdown_selectors:
+                try:
+                    # Get all elements matching selector
+                    elements = self.page.locator(selector).all()
+
+                    # Look for exact "Create" text (not "Create New")
+                    for elem in elements:
+                        try:
+                            if elem.is_visible(timeout=500):
+                                text = elem.text_content().strip()
+                                if text == "Create":
+                                    dropdown_create_option = elem
+                                    print(f"    [DEBUG] Found dropdown option with selector: {selector}, text: '{text}'")
+                                    break
+                        except:
+                            continue
+
+                    if dropdown_create_option:
+                        break
+                except Exception as e:
+                    continue
+
+            if dropdown_create_option:
+                print("    [DEBUG] Dropdown menu detected, clicking 'Create' option...")
+                dropdown_create_option.click()
+                self.page.wait_for_timeout(2000)  # Wait for form/drawer to open
+                print("    [OK] Clicked 'Create' from dropdown")
+            else:
+                print("    [INFO] No dropdown menu detected")
+                # Save page HTML for debugging
+                try:
+                    html_content = self.page.content()
+                    with open("page_content_debug.html", "w", encoding="utf-8") as f:
+                        f.write(html_content)
+                    print("    [DEBUG] Saved page HTML to page_content_debug.html")
+
+                    # Take screenshot to see current state
+                    self.page.screenshot(path="debug_no_dropdown.png")
+                    print("    [DEBUG] Screenshot saved: debug_no_dropdown.png")
+
+                    # Check if dropdown is visible but not detected
+                    all_visible = self.page.locator(':visible:has-text("Create")').all()
+                    print(f"    [DEBUG] Found {len(all_visible)} visible elements with 'Create' text")
+                    for elem in all_visible[:5]:  # Show first 5
+                        try:
+                            text = elem.text_content()[:50]
+                            tag = elem.evaluate("el => el.tagName")
+                            print(f"      - <{tag}>: {text}")
+                        except:
+                            pass
+                except Exception as e:
+                    print(f"    [DEBUG] Error during debugging: {str(e)}")
+
         else:
             raise Exception("Could not find Create New Object button")
 
@@ -1060,16 +1138,58 @@ class OntologyPage:
                 if not select_obj_type_input:
                     raise Exception("Could not find Object Type combobox")
 
-                # Click and paste (fill)
-                select_obj_type_input
+                # Click to open dropdown
                 select_obj_type_input.click()
+                print(f"    [DEBUG] Clicked dropdown to open it")
 
-                # Paste the value instead of typing
-                select_obj_type_input.fill(relation_data["object_type"])
-                self.page.wait_for_timeout(500)  # Wait for dropdown options to load
+                # Wait for dropdown options to load
+                self.page.wait_for_timeout(2000)  # Wait for API call
 
-                # Press Enter to select once option appears
-                self.page.keyboard.press("Enter")
+                # Wait for options to appear
+                try:
+                    options_locator = self.page.locator('[class*="option"]:visible, [role="option"]:visible')
+                    options_locator.first.wait_for(state="visible", timeout=8000)
+                    option_count = options_locator.count()
+                    print(f"    [DEBUG] Found {option_count} dropdown options")
+
+                    # Additional wait for options to fully render
+                    if option_count > 0:
+                        self.page.wait_for_timeout(1000)
+
+                    # Find and click the specific option by text
+                    target_object_type = relation_data["object_type"]
+                    option_clicked = False
+
+                    for i in range(option_count):
+                        option = options_locator.nth(i)
+                        option_text = option.text_content().strip()
+
+                        # The dropdown shows: DisplayNamePluralName (concatenated with no space)
+                        # But we have just the DisplayName
+                        # So we check if the option starts with our target
+                        if option_text == target_object_type or option_text.startswith(target_object_type):
+                            print(f"    [DEBUG] Found matching option: {option_text}")
+                            option.scroll_into_view_if_needed()
+                            self.page.wait_for_timeout(300)
+                            option.click()
+                            option_clicked = True
+                            print(f"    [OK] Clicked on option: {option_text}")
+                            break
+
+                    if not option_clicked:
+                        print(f"    [WARNING] Could not find match for '{target_object_type}'")
+                        print(f"    [WARNING] Available options:")
+                        for i in range(min(option_count, 10)):  # Show first 10 options
+                            opt_text = options_locator.nth(i).text_content().strip()
+                            print(f"              - {opt_text}")
+                        raise Exception(f"Object type '{target_object_type}' not found in dropdown")
+
+                except Exception as e:
+                    print(f"    [ERROR] Failed to select object type: {str(e)[:150]}")
+                    import traceback
+                    traceback.print_exc()
+                    raise
+
                 print(f"    [OK] Selected Object Type: {relation_data['object_type']}")
 
             except Exception as e:

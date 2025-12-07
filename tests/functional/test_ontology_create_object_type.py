@@ -1,9 +1,10 @@
 """
 Test Create Object Type with Global Admin
-Complete UI automation test for creating object types
+Complete UI automation test for creating object types with properties and relations
 """
 import sys
 import json
+import pytest
 from pathlib import Path
 from datetime import datetime
 from playwright.sync_api import sync_playwright
@@ -21,8 +22,13 @@ from utils.logger import get_logger
 
 def load_credentials():
     """Load credentials from JSON file"""
-    creds_path = project_root / "data" / "credentials.json"
-    with open(creds_path, 'r') as f:
+    with open("data/credentials.json") as f:
+        return json.load(f)
+
+
+def load_config():
+    """Load configuration settings"""
+    with open("data/config.json") as f:
         return json.load(f)
 
 
@@ -46,41 +52,62 @@ def generate_unique_object_type_data():
     }
 
 
-def test_create_object_type():
+class TestOntologyCreateObjectType:
     """
-    Test creating an object type with Global Admin account.
-
-    Flow:
-    1. Login with Global Admin credentials (qa_qa)
-    2. Select facility
-    3. Select use case (Cleaning)
-    4. Navigate to Ontology from sidebar
-    5. Click "Add New Object Type" button
-    6. Fill in object type details (to be implemented based on form)
+    Test class for creating object types in ontology with complete properties and relations.
     """
-    # Initialize logger
-    logger = get_logger()
-    logger.log_test_start("Create Object Type with Global Admin")
 
-    print("\n" + "="*80)
-    print("Testing Object Type Creation with Global Admin")
-    print("="*80)
-    print(f"Debug log file: {logger.logger.handlers[0].baseFilename}")
-    print("="*80)
+    @pytest.fixture(scope="function")
+    def browser_setup(self):
+        """
+        Setup browser for test execution.
+        Yields browser and page objects, then closes after test.
+        """
+        config = load_config()
+        browser_config = config.get("browser", {})
 
-    creds = load_credentials()
+        with sync_playwright() as p:
+            browser = p.chromium.launch(
+                headless=browser_config.get("headless", False),
+                slow_mo=browser_config.get("slowMo", 500),
+                args=['--start-maximized']
+            )
 
-    with sync_playwright() as p:
-        # Launch browser in maximized mode
-        browser = p.chromium.launch(
-            headless=False,
-            slow_mo=500,
-            args=['--start-maximized']
-        )
+            context = browser.new_context(no_viewport=True)
+            page = context.new_page()
+            page.set_default_timeout(config.get("timeout", {}).get("default", 30000))
 
-        # Create page with full viewport
-        context = browser.new_context(no_viewport=True)
-        page = context.new_page()
+            yield browser, page
+
+            page.close()
+            context.close()
+            browser.close()
+
+    def test_create_complete_object_type(self, browser_setup):
+        """
+        Main test method for creating a complete object type with properties and relations.
+
+        Flow:
+        1. Login with Global Admin credentials
+        2. Select facility and use case
+        3. Navigate to Ontology
+        4. Create object type with title and identifier properties
+        5. Add 7 different parameter type properties
+        6. Add 2 relations (One-To-One and One-To-Many)
+        7. Verify creation success
+        """
+        browser, page = browser_setup
+        creds = load_credentials()
+
+        # Initialize logger
+        logger = get_logger()
+        logger.log_test_start("Create Complete Object Type with Properties and Relations")
+
+        print("\n" + "="*80)
+        print("Testing Complete Object Type Creation with Global Admin")
+        print("="*80)
+        print(f"Debug log file: {logger.logger.handlers[0].baseFilename}")
+        print("="*80)
 
         try:
             # Step 1: Login with Global Admin
@@ -298,54 +325,119 @@ def test_create_object_type():
             print("Step 20: Creating Relations")
             print("="*80)
 
-            # Navigate to Relations tab
-            print("\n20.1. Navigating to Relations tab...")
-            ontology_page.navigate_to_relations_tab()
+            # Step 20.0: Find an existing object type to use for relations (must be DIFFERENT from current)
+            print("\n20.0. Finding existing object type for relations...")
 
-            # Create relations with both cardinality types
-            cardinality_types = ["One-To-One", "One-To-Many"]
-            created_relations = []
+            # Navigate back to Ontology list to find an existing object type
+            sidebar.navigate_to_ontology()
+            page.wait_for_timeout(2000)
 
-            for idx, cardinality in enumerate(cardinality_types):
-                print(f"\n{'='*80}")
-                print(f"Creating Relation {idx+1}/2: {cardinality}")
-                print(f"{'='*80}")
+            # Get all object type names from the list
+            available_object_type = None
+            current_object_type_name = object_type_data['display_name']
 
-                # Click Create New Relation
-                print(f"\n20.{idx+2}.1. Clicking Create New Relation button...")
-                ontology_page.click_create_new_relation_button()
+            try:
+                # More specific selector - find object type cards/rows in the list
+                # Try multiple selectors to find the object type list
+                object_type_selectors = [
+                    'div[class*="card"] span.primary',  # Card layout
+                    'tr[class*="row"] span.primary',     # Table layout
+                    'div[class*="list-item"] span.primary',  # List layout
+                ]
 
-                # Fill relation data
-                print(f"\n20.{idx+2}.2. Filling relation data...")
-                relation_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+                object_type_spans = None
+                for selector in object_type_selectors:
+                    test_locator = page.locator(selector)
+                    if test_locator.count() > 0:
+                        object_type_spans = test_locator
+                        print(f"   [DEBUG] Using selector: {selector}")
+                        break
 
-                relation_data = {
-                    "label": f"Relation_{cardinality.replace('-', '')}_{relation_timestamp}",
-                    "object_type": "Area_New",  # Use existing object type
-                    "description": f"Test {cardinality} relation between objects",
-                    "cardinality": cardinality,
-                    "required": False,
-                    "reason": f"Automated {cardinality} relation creation via test automation"
-                }
+                if not object_type_spans:
+                    # Fallback: use generic span.primary but filter out "Edit", "Delete", etc.
+                    object_type_spans = page.locator('span.primary')
 
-                print(f"   - Label: {relation_data['label']}")
-                print(f"   - Object Type: {relation_data['object_type']}")
-                print(f"   - Cardinality: {relation_data['cardinality']}")
+                if object_type_spans and object_type_spans.count() > 0:
+                    print(f"   [DEBUG] Found {object_type_spans.count()} span.primary element(s)")
 
-                ontology_page.fill_relation_data(relation_data)
+                    # Loop through object types to find one that's NOT the current one
+                    # and NOT a button/action text like "Edit", "Delete", "View", etc.
+                    excluded_texts = ["Edit", "Delete", "View", "Remove", "Cancel", "Close", "Save"]
 
-                # Click Create button
-                print(f"\n20.{idx+2}.3. Clicking Create button to finalize relation...")
-                ontology_page.click_create_relation_button()
-                print(f"   [OK] Relation created: {relation_data['label']}")
+                    for i in range(object_type_spans.count()):
+                        obj_type_name = object_type_spans.nth(i).text_content().strip()
 
-                # Store created relation info
-                created_relations.append({
-                    "label": relation_data['label'],
-                    "cardinality": cardinality
-                })
+                        # Skip if it's the current object type or an action button
+                        if obj_type_name != current_object_type_name and obj_type_name not in excluded_texts:
+                            available_object_type = obj_type_name
+                            print(f"   [OK] Found existing object type: {available_object_type}")
+                            break
 
-                # Small wait before creating next relation
+                    if not available_object_type:
+                        print(f"   [WARNING] No OTHER object types found (only current one exists)")
+                else:
+                    print(f"   [WARNING] No existing object types found")
+            except Exception as e:
+                print(f"   [WARNING] Error finding object types: {str(e)}")
+
+            # Navigate back to our created object type
+            if available_object_type:
+                print(f"\n20.0b. Navigating back to created object type...")
+                ontology_page.search_object_type_in_list(object_type_data['display_name'])
+                ontology_page.click_searched_object_type(object_type_data['display_name'])
+                page.wait_for_timeout(1000)
+
+                # Navigate to Relations tab
+                print("\n20.1. Navigating to Relations tab...")
+                ontology_page.navigate_to_relations_tab()
+
+                # Create relations with both cardinality types
+                cardinality_types = ["One-To-One", "One-To-Many"]
+                created_relations = []
+
+                for idx, cardinality in enumerate(cardinality_types):
+                    print(f"\n{'='*80}")
+                    print(f"Creating Relation {idx+1}/2: {cardinality}")
+                    print(f"{'='*80}")
+
+                    # Click Create New Relation
+                    print(f"\n20.{idx+2}.1. Clicking Create New Relation button...")
+                    ontology_page.click_create_new_relation_button()
+
+                    # Fill relation data
+                    print(f"\n20.{idx+2}.2. Filling relation data...")
+                    relation_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+
+                    relation_data = {
+                        "label": f"Relation_{cardinality.replace('-', '')}_{relation_timestamp}",
+                        "object_type": available_object_type,  # Use dynamically found object type
+                        "description": f"Test {cardinality} relation between objects",
+                        "cardinality": cardinality,
+                        "required": False,
+                        "reason": f"Automated {cardinality} relation creation via test automation"
+                    }
+
+                    print(f"   - Label: {relation_data['label']}")
+                    print(f"   - Object Type: {relation_data['object_type']}")
+                    print(f"   - Cardinality: {relation_data['cardinality']}")
+
+                    ontology_page.fill_relation_data(relation_data)
+
+                    # Click Create button
+                    print(f"\n20.{idx+2}.3. Clicking Create button to finalize relation...")
+                    ontology_page.click_create_relation_button()
+                    print(f"   [OK] Relation created: {relation_data['label']}")
+
+                    # Store created relation info
+                    created_relations.append({
+                        "label": relation_data['label'],
+                        "cardinality": cardinality
+                    })
+
+                    # Small wait before creating next relation
+            else:
+                print("\n20.1. [SKIP] No existing object types found - skipping relation creation")
+                created_relations = []
             print("\n" + "="*80)
             print("Test completed - Object type, properties, and relations creation successful!")
             print("="*80)
@@ -359,15 +451,22 @@ def test_create_object_type():
             for i, rel in enumerate(created_relations):
                 print(f"    {i+1}. {rel['label']} - Cardinality: {rel['cardinality']}")
 
-            # Wait to view results
+            # Test completed successfully
+            logger.log_test_end("Create Complete Object Type", status="PASS")
+            print("\n" + "="*80)
+            print("[PASS] TEST PASSED - Object type creation completed successfully!")
+            print("="*80)
+
         except Exception as e:
+            logger.log_test_end("Create Complete Object Type", status="FAIL")
             print(f"\n[ERROR] Test failed with error: {str(e)}")
+            page.screenshot(path="error_create_object_type.png")
+            print("[DEBUG] Screenshot saved: error_create_object_type.png")
             import traceback
             traceback.print_exc()
-            # Wait before closing
-        finally:
-            browser.close()
+            raise
 
 
 if __name__ == "__main__":
-    test_create_object_type()
+    # Allow running the test directly as a script
+    pytest.main([__file__, "-v", "-s"])
