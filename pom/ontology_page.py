@@ -64,7 +64,7 @@ class OntologyPage:
                 break
 
         if add_button:
-            add_button.wait_for(state="visible", timeout=10000)
+            add_button.wait_for(state="visible", timeout=1000)
             add_button
             add_button.click()
             print("    [OK] Clicked Add New Object Type button")
@@ -90,7 +90,7 @@ class OntologyPage:
         search_input = self.page.locator('input[placeholder*="Search" i], input[name*="search" i]').first
 
         if search_input.count() > 0:
-            search_input.wait_for(state="visible", timeout=10000)
+            search_input.wait_for(state="visible", timeout=1000)
             search_input.clear()
             search_input.fill(object_type_name)
             print(f"    [OK] Searched for: {object_type_name}")
@@ -126,7 +126,7 @@ class OntologyPage:
         object_type_row = self.page.locator(f'tr:has-text("{object_type_name}"), div:has-text("{object_type_name}")').first
 
         if object_type_row.count() > 0:
-            object_type_row.wait_for(state="visible", timeout=10000)
+            object_type_row.wait_for(state="visible", timeout=1000)
             object_type_row
             object_type_row.click()
             print(f"    [OK] Clicked on Object Type: {object_type_name}")
@@ -182,7 +182,7 @@ class OntologyPage:
                 break
 
         if tab:
-            tab.wait_for(state="visible", timeout=10000)
+            tab.wait_for(state="visible", timeout=1000)
             tab.click()
             print("    [OK] Navigated to Object Types tab")
         else:
@@ -207,7 +207,7 @@ class OntologyPage:
                 break
 
         if tab:
-            tab.wait_for(state="visible", timeout=10000)
+            tab.wait_for(state="visible", timeout=1000)
             tab.click()
             print("    [OK] Navigated to Objects tab")
         else:
@@ -429,7 +429,7 @@ class OntologyPage:
                 break
 
         if submit_button:
-            submit_button.wait_for(state="visible", timeout=10000)
+            submit_button.wait_for(state="visible", timeout=1000)
             submit_button
             submit_button.click()
             print("    [OK] Clicked Submit button")
@@ -451,7 +451,7 @@ class OntologyPage:
         search_input = self.page.locator('input[placeholder="Search with Object Type"]').first
 
         if search_input.count() > 0:
-            search_input.wait_for(state="visible", timeout=10000)
+            search_input.wait_for(state="visible", timeout=1000)
             search_input
             search_input.clear()
             search_input.fill(object_type_name)
@@ -487,7 +487,7 @@ class OntologyPage:
                 break
 
         if object_type_element:
-            object_type_element.wait_for(state="visible", timeout=10000)
+            object_type_element.wait_for(state="visible", timeout=1000)
             object_type_element
             object_type_element.click()
             print(f"    [OK] Clicked on object type: {object_type_name}")
@@ -534,7 +534,7 @@ class OntologyPage:
                 print(f"    [DEBUG] Strategy {idx+1} error: {str(e)[:50]}")
 
         if properties_tab:
-            properties_tab.wait_for(state="visible", timeout=10000)
+            properties_tab.wait_for(state="visible", timeout=1000)
             properties_tab
             properties_tab.click()
             print("    [OK] Navigated to Properties tab")
@@ -573,7 +573,7 @@ class OntologyPage:
 
             if create_button:
                 try:
-                    create_button.wait_for(state="attached", timeout=5000)
+                    create_button.wait_for(state="attached", timeout=1000)
                     create_button.scroll_into_view_if_needed()
                     create_button.click()
                     print("    [OK] Clicked Create New Property button")
@@ -626,7 +626,7 @@ class OntologyPage:
         next_button = self.page.locator('button:has-text("Next")').first
 
         if next_button.count() > 0:
-            next_button.wait_for(state="visible", timeout=10000)
+            next_button.wait_for(state="visible", timeout=1000)
             next_button
             next_button.click()
             print("    [OK] Clicked Next button")
@@ -1269,29 +1269,94 @@ class OntologyPage:
                 import traceback
                 traceback.print_exc()
 
-        # Field 6: Required (toggle/checkbox)
+        # Field 6: Required (Hidden checkbox with React switch UI)
         if "required" in relation_data:
             print("    [6] Setting Required...")
             try:
-                # Find first checkbox/switch in modal (Required field doesn't have visible label)
-                modal = self.page.locator('div[role="presentation"]').first
-                if modal.count() > 0:
-                    required_toggle = modal.locator('input[type="checkbox"], div[role="switch"]').first
-                    if required_toggle.count() > 0:
-                        try:
-                            is_checked = required_toggle.is_checked() if hasattr(required_toggle, 'is_checked') else False
-                            should_check = relation_data["required"]
+                should_be_required = relation_data["required"]
 
-                            if is_checked != should_check:
-                                required_toggle.click(timeout=2000)
-                                print(f"    [OK] Set Required: {should_check}")
+                # Find the VISIBLE modal with actual content (not a stale/empty one)
+                modal = None
+                all_modals = self.page.locator('div[role="presentation"], div[role="dialog"]')
+
+                # Find the modal that actually has form inputs
+                for i in range(all_modals.count()):
+                    test_modal = all_modals.nth(i)
+                    if test_modal.locator('input').count() > 0:
+                        modal = test_modal
+                        print(f"    [DEBUG] Found active modal (#{i+1}) with {test_modal.locator('input').count()} inputs")
+                        break
+
+                if modal and modal.count() > 0:
+                    print("    [DEBUG] Found modal")
+
+                    # Wait for modal content to fully render
+                    self.page.wait_for_timeout(1000)
+
+                    # Retry finding the checkbox (may take time to render)
+                    checkbox_input = None
+                    max_retries = 5
+                    for retry in range(max_retries):
+                        checkbox_input = modal.locator('input[type="checkbox"][role="switch"]').first
+                        if checkbox_input.count() > 0:
+                            print(f"    [DEBUG] Found checkbox on attempt {retry + 1}")
+                            break
+                        else:
+                            # Debug: What inputs ARE in the modal?
+                            if retry == 0:
+                                all_inputs = modal.locator('input').count()
+                                all_checkboxes = modal.locator('input[type="checkbox"]').count()
+                                all_switches = modal.locator('[role="switch"]').count()
+                                print(f"    [DEBUG] Modal has: {all_inputs} inputs, {all_checkboxes} checkboxes, {all_switches} switches")
+
+                            print(f"    [DEBUG] Checkbox not found, retry {retry + 1}/{max_retries}...")
+                            self.page.wait_for_timeout(500)
+
+                    if checkbox_input and checkbox_input.count() > 0:
+                        print("    [DEBUG] Found hidden checkbox switch in modal")
+
+                        # Check current state from aria-checked attribute
+                        aria_checked = checkbox_input.get_attribute('aria-checked')
+                        is_currently_required = (aria_checked == 'true')
+
+                        print(f"    [DEBUG] Current: {'ON (required)' if is_currently_required else 'OFF (optional)'}")
+                        print(f"    [DEBUG] Desired: {'ON (required)' if should_be_required else 'OFF (optional)'}")
+
+                        # Toggle if needed
+                        if is_currently_required != should_be_required:
+                            # Click the visual switch container (more reliable than hidden checkbox)
+                            switch_container = modal.locator('.react-switch').first
+                            if switch_container.count() > 0:
+                                switch_container.click(timeout=3000)
+                                self.page.wait_for_timeout(800)
+
+                                # Verify the change
+                                new_aria_checked = checkbox_input.get_attribute('aria-checked')
+                                new_state = (new_aria_checked == 'true')
+
+                                # Verify background color changed
+                                bg_elem = modal.locator('.react-switch-bg').first
+                                if bg_elem.count() > 0:
+                                    bg_color = bg_elem.evaluate('el => window.getComputedStyle(el).backgroundColor')
+                                    print(f"    [DEBUG] New background: {bg_color}")
+
+                                print(f"    [OK] Toggled Required to: {'ON (required)' if new_state else 'OFF (optional)'}")
                             else:
-                                print(f"    [OK] Required already set to: {should_check}")
-                        except:
-                            # Skip if not accessible
-                            print("    [INFO] Skipping Required field (not accessible)")
+                                # Fallback: force click on hidden element
+                                checkbox_input.evaluate('el => el.click()')
+                                self.page.wait_for_timeout(500)
+                                print(f"    [OK] Toggled Required using fallback method")
+                        else:
+                            print(f"    [OK] Required already set to: {'Required' if should_be_required else 'Optional'}")
+                    else:
+                        print("    [WARNING] Required checkbox not found in modal")
+                else:
+                    print("    [WARNING] Modal not found for Required toggle")
+
             except Exception as e:
-                print(f"    [WARNING] Failed to set required: {str(e)[:100]}")
+                print(f"    [WARNING] Failed to set required: {str(e)[:150]}")
+                import traceback
+                traceback.print_exc()
 
         # Field 7: Provide Reason
         if "reason" in relation_data:

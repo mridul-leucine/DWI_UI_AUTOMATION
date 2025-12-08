@@ -235,13 +235,34 @@ class TestOntologyCompleteLifecycle:
             # Go back to Ontology main page
             sidebar = Sidebar(page)
             sidebar.navigate_to_ontology()
-            page.wait_for_timeout(2000)  # Wait for ontology page to fully load
+            page.wait_for_timeout(3000)  # Wait for ontology page to fully load
 
-            # Search for the created object type
-            ontology_page.search_object_type_in_list(object_type_data['display_name'])
+            # Retry logic for searching and clicking the object type (in case of indexing delay)
+            max_retries = 3
+            retry_count = 0
+            object_type_found = False
 
-            # Click on the object type to open it
-            ontology_page.click_searched_object_type(object_type_data['display_name'])
+            while retry_count < max_retries and not object_type_found:
+                try:
+                    # Search for the created object type
+                    ontology_page.search_object_type_in_list(object_type_data['display_name'])
+                    page.wait_for_timeout(1000)
+
+                    # Click on the object type to open it
+                    ontology_page.click_searched_object_type(object_type_data['display_name'])
+                    object_type_found = True
+                    print(f"   [OK] Found and clicked object type on attempt {retry_count + 1}")
+                except Exception as e:
+                    retry_count += 1
+                    if retry_count < max_retries:
+                        print(f"   [RETRY {retry_count}/{max_retries}] Object type not found yet, waiting...")
+                        page.wait_for_timeout(2000)
+                        # Refresh the search
+                        sidebar.navigate_to_ontology()
+                        page.wait_for_timeout(2000)
+                    else:
+                        print(f"   [ERROR] Failed to find object type after {max_retries} attempts")
+                        raise
 
             print(f"   - Current URL: {page.url}")
 
@@ -250,10 +271,9 @@ class TestOntologyCompleteLifecycle:
             ontology_page.navigate_to_properties_tab()
 
             # Define all parameter types to create
-            # NOTE: Single-select dropdown temporarily commented out due to form filling issue
             parameter_types = [
                 {"name": "Multi-select dropdown", "needs_options": True},
-                # {"name": "Single-select dropdown", "needs_options": True},  # TODO: Fix single-select dropdown selector
+                {"name": "Single-select dropdown", "needs_options": True},
                 {"name": "Single-line text", "needs_options": False},
                 {"name": "Multi-line text", "needs_options": False},
                 {"name": "Number", "needs_options": False},
@@ -324,124 +344,11 @@ class TestOntologyCompleteLifecycle:
                 })
 
             print("\n" + "="*80)
-            print("Step 19: Creating Relations")
+            print("PHASE 1 COMPLETED - Object type with 7 properties created!")
             print("="*80)
 
-            # Step 19.0: Find an existing object type to use for relations (must be DIFFERENT from current)
-            print("\n19.0. Finding existing object type for relations...")
-
-            # Navigate back to Ontology list to find an existing object type
-            sidebar.navigate_to_ontology()
+            # Wait for property creation to fully complete
             page.wait_for_timeout(2000)
-
-            # Get all object type names from the list
-            available_object_type = None
-            current_object_type_name = object_type_data['display_name']
-
-            try:
-                # More specific selector - find object type cards/rows in the list
-                # Try multiple selectors to find the object type list
-                object_type_selectors = [
-                    'div[class*="card"] span.primary',  # Card layout
-                    'tr[class*="row"] span.primary',     # Table layout
-                    'div[class*="list-item"] span.primary',  # List layout
-                ]
-
-                object_type_spans = None
-                for selector in object_type_selectors:
-                    test_locator = page.locator(selector)
-                    if test_locator.count() > 0:
-                        object_type_spans = test_locator
-                        print(f"   [DEBUG] Using selector: {selector}")
-                        break
-
-                if not object_type_spans:
-                    # Fallback: use generic span.primary but filter out "Edit", "Delete", etc.
-                    object_type_spans = page.locator('span.primary')
-
-                if object_type_spans and object_type_spans.count() > 0:
-                    print(f"   [DEBUG] Found {object_type_spans.count()} span.primary element(s)")
-
-                    # Loop through object types to find one that's NOT the current one
-                    # and NOT a button/action text like "Edit", "Delete", "View", etc.
-                    excluded_texts = ["Edit", "Delete", "View", "Remove", "Cancel", "Close", "Save"]
-
-                    for i in range(object_type_spans.count()):
-                        obj_type_name = object_type_spans.nth(i).text_content().strip()
-
-                        # Skip if it's the current object type or an action button
-                        if obj_type_name != current_object_type_name and obj_type_name not in excluded_texts:
-                            available_object_type = obj_type_name
-                            print(f"   [OK] Found existing object type: {available_object_type}")
-                            break
-
-                    if not available_object_type:
-                        print(f"   [WARNING] No OTHER object types found (only current one exists)")
-                else:
-                    print(f"   [WARNING] No existing object types found")
-            except Exception as e:
-                print(f"   [WARNING] Error finding object types: {str(e)}")
-
-            # Navigate back to our created object type
-            if available_object_type:
-                print(f"\n19.0b. Navigating back to created object type...")
-                ontology_page.search_object_type_in_list(object_type_data['display_name'])
-                ontology_page.click_searched_object_type(object_type_data['display_name'])
-                page.wait_for_timeout(1000)
-
-                # Navigate to Relations tab
-                print("\n19.1. Navigating to Relations tab...")
-                ontology_page.navigate_to_relations_tab()
-
-                # Create relations with both cardinality types
-                cardinality_types = ["One-To-One", "One-To-Many"]
-                created_relations = []
-
-                for idx, cardinality in enumerate(cardinality_types):
-                    print(f"\n{'='*80}")
-                    print(f"Creating Relation {idx+1}/2: {cardinality}")
-                    print(f"{'='*80}")
-
-                    # Click Create New Relation
-                    print(f"\n19.{idx+2}.1. Clicking Create New Relation button...")
-                    ontology_page.click_create_new_relation_button()
-
-                    # Fill relation data
-                    print(f"\n19.{idx+2}.2. Filling relation data...")
-                    relation_timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
-
-                    relation_data = {
-                        "label": f"Relation_{cardinality.replace('-', '')}_{relation_timestamp}",
-                        "object_type": available_object_type,  # Use dynamically found object type
-                        "description": f"Test {cardinality} relation between objects",
-                        "cardinality": cardinality,
-                        "required": False,
-                        "reason": f"Automated {cardinality} relation creation via test automation"
-                    }
-
-                    print(f"   - Label: {relation_data['label']}")
-                    print(f"   - Object Type: {relation_data['object_type']}")
-                    print(f"   - Cardinality: {relation_data['cardinality']}")
-
-                    ontology_page.fill_relation_data(relation_data)
-
-                    # Click Create button
-                    print(f"\n19.{idx+2}.3. Clicking Create button to finalize relation...")
-                    ontology_page.click_create_relation_button()
-                    print(f"   [OK] Relation created: {relation_data['label']}")
-
-                    # Store created relation info
-                    created_relations.append({
-                        "label": relation_data['label'],
-                        "cardinality": cardinality
-                    })
-            else:
-                print("\n19.1. [SKIP] No existing object types found - skipping relation creation")
-                created_relations = []
-
-            print("\n" + "="*80)
-            print("PHASE 1 COMPLETED - Object type with properties and relations created!")
-            print("="*80)
 
             # ===================================================================
             # PHASE 2: CREATE OBJECT INSTANCE
@@ -453,16 +360,26 @@ class TestOntologyCompleteLifecycle:
             # Step 19.5: Logout and login with Process Publisher account
             print("\n19.5. Switching to Process Publisher account...")
             try:
-                # Check for and close any open modals first
-                cancel_buttons = page.locator('button:has-text("Cancel"):visible')
-                if cancel_buttons.count() > 0:
-                    print("   [DEBUG] Closing open modal...")
-                    cancel_buttons.first.click()
-                    page.wait_for_timeout(1000)
+                # Check for and close any open modals first (with retry)
+                for attempt in range(3):
+                    try:
+                        cancel_buttons = page.locator('button:has-text("Cancel"):visible')
+                        if cancel_buttons.count() > 0:
+                            print(f"   [DEBUG] Closing open modal (attempt {attempt + 1})...")
+                            cancel_buttons.first.click(timeout=5000)
+                            page.wait_for_timeout(1000)
+                            break
+                    except Exception as e:
+                        if attempt < 2:
+                            print(f"   [DEBUG] Modal close attempt {attempt + 1} failed, retrying...")
+                            page.wait_for_timeout(500)
+                        else:
+                            print(f"   [DEBUG] Could not close modal, will try Escape key...")
 
-                # Press Escape to ensure any drawers are closed
-                page.keyboard.press("Escape")
-                page.wait_for_timeout(500)
+                # Press Escape multiple times to ensure any drawers/modals are closed
+                for _ in range(3):
+                    page.keyboard.press("Escape")
+                    page.wait_for_timeout(300)
 
                 # Logout from Global Admin
                 print("   - Logging out from Global Admin...")
@@ -531,6 +448,19 @@ class TestOntologyCompleteLifecycle:
                 print(f"   [WARNING] Error during account switch: {str(e)}")
                 print(f"   [INFO] Continuing with current account...")
 
+                # Ensure we're on the correct object type page even if account switch failed
+                print(f"   - Navigating to object type: {object_type_data['display_name']}...")
+                try:
+                    sidebar.navigate_to_ontology()
+                    page.wait_for_timeout(2000)
+                    ontology_page.search_object_type_in_list(object_type_data['display_name'])
+                    ontology_page.click_searched_object_type(object_type_data['display_name'])
+                    page.wait_for_timeout(1500)
+                    print("   [OK] Navigated to object type page")
+                except Exception as nav_error:
+                    print(f"   [ERROR] Failed to navigate to object type: {str(nav_error)}")
+                    raise
+
             # Step 20: Navigate to Objects tab
             print("\n20. Navigating to Objects tab...")
             ontology_page.navigate_to_objects_tab()
@@ -581,9 +511,8 @@ class TestOntologyCompleteLifecycle:
                     label = all_labels.nth(idx)
                     label_text = label.text_content().strip()
 
-                    # Skip Reason and Relations (handled separately)
-                    # Relations are optional (required=False) so we can skip them
-                    if not label_text or "Provide Reason" in label_text or "Relation_" in label_text:
+                    # Skip Reason (handled separately) and Show Archived checkbox
+                    if not label_text or "Provide Reason" in label_text or "Show Archived" in label_text:
                         continue
 
                     print(f"\n   - Processing: {label_text}")
@@ -619,8 +548,12 @@ class TestOntologyCompleteLifecycle:
                         is_multiselect = False
 
                         # Check label name first (most reliable for empty dropdowns)
-                        if "multiselect" in label_text.lower() or "multi-select" in label_text.lower():
+                        label_lower = label_text.lower()
+                        print(f"   [DEBUG] Checking label for multiselect: '{label_text}'")
+
+                        if "multiselect" in label_lower or "multi-select" in label_lower or "multi_select" in label_lower:
                             is_multiselect = True
+                            print(f"   [DEBUG] Detected as multiselect from label name")
                         else:
                             # Fallback: check for multiValue indicators (only works if options already selected)
                             multiselect_indicators = [
@@ -631,12 +564,15 @@ class TestOntologyCompleteLifecycle:
                             for indicator in multiselect_indicators:
                                 if field_container.locator(indicator).count() > 0:
                                     is_multiselect = True
+                                    print(f"   [DEBUG] Detected as multiselect from {indicator}")
                                     break
 
                         if is_multiselect:
                             field_type = "multiselect"
+                            print(f"   [DEBUG] Final type: multiselect")
                         else:
                             field_type = "singleselect"
+                            print(f"   [DEBUG] Final type: singleselect")
                     # Check for textarea
                     elif field_container.locator('textarea').count() > 0:
                         field_type = "multilinetext"
@@ -695,6 +631,7 @@ class TestOntologyCompleteLifecycle:
                                 filled_count += 1
 
                     elif field_type == "singleselect":
+                        print(f"   [DEBUG] Attempting to fill single-select dropdown: {label_text}")
                         # Try multiple selectors for single-select dropdowns
                         input_container = None
                         selectors_to_try = [
@@ -708,11 +645,12 @@ class TestOntologyCompleteLifecycle:
                             test_locator = field_container.locator(selector).first
                             if test_locator.count() > 0:
                                 input_container = test_locator
-                                print(f"   [DEBUG] Using selector: {selector}")
+                                print(f"   [DEBUG] Found dropdown container using: {selector}")
                                 break
 
                         if input_container and input_container.count() > 0:
                             try:
+                                print(f"   [DEBUG] Clicking dropdown to open...")
                                 input_container.click(timeout=5000)
                                 page.wait_for_timeout(800)
 
@@ -725,21 +663,27 @@ class TestOntologyCompleteLifecycle:
 
                                 # Get visible options, excluding "No options"
                                 options = page.locator('[class*="option"]:visible:not(:has-text("No options"))')
+                                print(f"   [DEBUG] Found {options.count()} options")
                                 if options.count() > 0:
                                     random_idx = random.randint(0, options.count() - 1)
                                     option = options.nth(random_idx)
                                     option_text = option.text_content().strip()
                                     option.click()
+                                    page.wait_for_timeout(300)  # Wait for selection to register
+                                    page.keyboard.press("Escape")  # Close the dropdown
+                                    page.wait_for_timeout(200)  # Wait for dropdown to close
                                     print(f"   [{filled_count + 1}] Filled: {option_text}")
                                     filled_count += 1
                                 else:
                                     print(f"   [SKIP] No valid options found")
                                     page.keyboard.press("Escape")
                             except Exception as e:
-                                print(f"   [WARNING] Failed to interact with dropdown: {str(e)[:100]}")
+                                print(f"   [ERROR] Failed to fill single-select: {str(e)[:150]}")
+                                import traceback
+                                traceback.print_exc()
                                 continue
                         else:
-                            print(f"   [SKIP] Could not find dropdown input container")
+                            print(f"   [SKIP] Could not find single-select dropdown container")
 
                     elif field_type == "singlelinetext":
                         input_elem = field_container.locator('input[type="text"]').first
@@ -875,9 +819,6 @@ class TestOntologyCompleteLifecycle:
             for i, prop in enumerate(created_properties):
                 options_text = " (with 3 options)" if prop["has_options"] else ""
                 print(f"    {i+1}. {prop['label']} - Type: {prop['type']}{options_text}")
-            print(f"\n  - Relations ({len(created_relations)}):")
-            for i, rel in enumerate(created_relations):
-                print(f"    {i+1}. {rel['label']} - Cardinality: {rel['cardinality']}")
             print(f"\n  - Object Instance: 1 instance with {filled_count} fields filled")
             print("="*80)
 

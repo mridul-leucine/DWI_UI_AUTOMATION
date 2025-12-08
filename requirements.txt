@@ -10,7 +10,7 @@ pytest-xdist==3.5.0
 pytest-rerunfailures==12.0
 
 # Reporting
-allure-pytest==2.13.2
+allure-pytest==2.15.2
 
 # Utilities
 python-dotenv==1.0.0
